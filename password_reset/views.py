@@ -15,8 +15,9 @@ from django.views import generic
 from django.views.decorators.debug import sensitive_post_parameters
 
 
-from .forms import PasswordRecoveryForm, PasswordResetForm
 from .signals import user_recovers_password
+from .settings import PASSWORD_RECOVERY_FORM PASSWORD_RESET_FORM
+from .helpers import get_form_class
 
 
 class SaltMixin(object):
@@ -54,7 +55,7 @@ recover_done = RecoverDone.as_view()
 
 class Recover(SaltMixin, generic.FormView):
     case_sensitive = True
-    form_class = PasswordRecoveryForm
+    form_class = get_form_class(PASSWORD_RECOVERY_FORM)
     template_name = 'password_reset/recovery_form.html'
     success_url_name = 'password_reset_sent'
     email_template_name = 'password_reset/recovery_email.txt'
@@ -114,7 +115,7 @@ recover = Recover.as_view()
 
 
 class Reset(SaltMixin, generic.FormView):
-    form_class = PasswordResetForm
+    form_class = get_form_class(PASSWORD_RESET_FORM)
     token_expires = None
     template_name = 'password_reset/reset.html'
     success_url = reverse_lazy('password_reset_done')
