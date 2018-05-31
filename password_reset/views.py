@@ -16,7 +16,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 
 
 from .signals import user_recovers_password
-from .settings import PASSWORD_RECOVERY_FORM PASSWORD_RESET_FORM
+from .settings import PASSWORD_RECOVERY_FORM, PASSWORD_RESET_FORM
 from .helpers import get_form_class
 
 
