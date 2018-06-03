@@ -92,8 +92,17 @@ class Recover(SaltMixin, generic.FormView):
                                        context).strip()
         subject = loader.render_to_string(self.email_subject_template_name,
                                           context).strip()
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL,
+
+        self.send_mail(subject, body, settings.DEFAULT_FROM_EMAIL,
                   [self.user.email])
+
+    def send_mail(self, subject, body, sender, to=[], **kwargs):
+        """
+            Users should be able to override the default method for sending emails.
+            For example you may want to implement background mail sending using Celery
+            or to add CC/BCC mails for debug purposes / tracability 
+        """
+        send_mail(subject, body, sender, to, **kwargs)
 
     def form_valid(self, form):
         self.user = form.cleaned_data['user']
@@ -141,8 +150,11 @@ class Reset(SaltMixin, generic.FormView):
         except signing.BadSignature:
             return self.invalid()
 
-        self.user = get_object_or_404(get_user_model(), pk=pk)
+        self.user = self.get_user(pk)
         return super(Reset, self).dispatch(request, *args, **kwargs)
+
+    def get_user(self, pk):
+        return get_object_or_404(get_user_model(), pk=pk)
 
     def invalid(self):
         return self.render_to_response(self.get_context_data(invalid=True))
@@ -163,6 +175,12 @@ class Reset(SaltMixin, generic.FormView):
 
     def form_valid(self, form):
         form.save()
+        # form.save() should take care to validate its form's state and
+        # populate form errors if errors appeared during the save
+        # If there are any errors, redirect to the appropriate view
+        if not form.is_valid():
+            return super(Reset, self).form_invalid(form)
+
         user_recovers_password.send(
             sender=get_user_model(),
             user=form.user,
